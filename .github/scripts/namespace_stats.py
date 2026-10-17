@@ -54,6 +54,7 @@ BODY_NAMESPACE_HEADING = re.compile(
 def github_request(method, path, token, body=None):
     """Send an authenticated request to the GitHub REST API."""
     data = json.dumps(body).encode() if body is not None else None
+    print(f"URL: {API_URL}/{path}")
     req = urllib.request.Request(
         f"{API_URL}{path}",
         data=data,
