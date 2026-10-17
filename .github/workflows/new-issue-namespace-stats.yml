@@ -31,4 +31,4 @@ jobs:
         run: python .github/scripts/namespace_stats.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OUTPUT_CSV_FILE: reports/namespaces.csv  # path relative to the repo root
+          OUTPUT_CSV_FILE: reports/namespace_stats.csv  # path relative to the repo root

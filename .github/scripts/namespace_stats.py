@@ -187,25 +187,6 @@ def main():
     labels = [label["name"] for label in issue.get("labels", [])]
     print(f"Labels: {', '.join(labels) if labels else '(none)'}")
 
-    # Post a comment on the issue
-    comment = (
-        f"Thanks for opening this issue, @{author}! "
-        "A maintainer will take a look soon."
-    )
-    github_request(
-        "POST", f"/repos/{repo}/issues/{number}/comments", token, {"body": comment}
-    )
-    print("Posted welcome comment.")
-
-    # Add a label based on the title
-    if "bug" in title.lower():
-        updated = github_request(
-            "POST", f"/repos/{repo}/issues/{number}/labels", token, {"labels": ["bug"]}
-        )
-        # The API responds with the issue's full label list after the change
-        print("Added 'bug' label.")
-        print(f"Labels now: {', '.join(label['name'] for label in updated)}")
-
     # Record namespace requests in the CSV file
     has_namespace_label = any(name.lower() == "namespace" for name in labels)
     if "namespace" in title.lower() or has_namespace_label:
