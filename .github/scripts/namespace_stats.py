@@ -25,6 +25,9 @@ API_URL = "https://api.github.com"
 # Path of the CSV file in the repo, set in the workflow's env block
 OUTPUT_CSV_FILE = os.environ["OUTPUT_CSV_FILE"]
 
+# Orphan branch containing the CSV file
+STATS_FILE_BRANCH = os.environ["STATS_FILE_BRANCH"]
+
 # Matches "namespace" followed by an optional ":" or "=" and then the name,
 # which may be wrapped in single quotes, backticks or square brackets, e.g.
 #   "New namespace: payments-dev"   "Request namespace 'team-a'"
@@ -219,9 +222,8 @@ def main():
             publisher_col,
             number,
         ]
-        branch = event["repository"]["default_branch"]
-        append_csv_row(repo, branch, OUTPUT_CSV_FILE, row, token, number)
-        print(f"Appended {row} to {OUTPUT_CSV_FILE} on {branch}.")
+        append_csv_row(repo, STATS_FILE_BRANCH, OUTPUT_CSV_FILE, row, token, number)
+        print(f"Appended {row} to {OUTPUT_CSV_FILE} on {STATS_FILE_BRANCH}.")
 
 
 if __name__ == "__main__":

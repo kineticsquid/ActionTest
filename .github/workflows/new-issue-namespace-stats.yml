@@ -32,3 +32,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OUTPUT_CSV_FILE: reports/namespace_stats.csv  # path relative to the repo root
+          STATS_FILE_BRANCH: namespace-stats
