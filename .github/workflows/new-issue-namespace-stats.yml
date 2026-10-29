@@ -19,8 +19,10 @@ jobs:
   handle-issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out script
         uses: actions/checkout@v5
+        with:
+          ref: namespace-stats
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -28,7 +30,7 @@ jobs:
           python-version: "3.12"
 
       - name: Run issue handler
-        run: python .github/scripts/namespace_stats.py
+        run: python namespace-stats/namespace_stats.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OUTPUT_CSV_FILE: namespace-stats/namespace-stats.csv  # path relative to the repo root
