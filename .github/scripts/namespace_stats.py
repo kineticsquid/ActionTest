@@ -128,6 +128,51 @@ def is_namespace_a_vs_code_publisher(vs_code_publisher):
         print(f"Request failed: {e}")
         return False
 
+def does_vs_code_publisher_have_extensions(vs_code_publisher):
+    """Return True if the VS Code publisher has published extensions."""
+    url = "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery"
+    payload = {
+        "filters": [{
+            "criteria": [
+                # 8 = InstallationTarget: only VS Code extensions
+                {"filterType": 8, "value": "Microsoft.VisualStudio.Code"},
+                # 18 = PublisherName
+                {"filterType": 18, "value": vs_code_publisher},
+                # 12 = ExcludeWithFlags; 4096 = Unpublished
+                {"filterType": 12, "value": "4096"},
+            ],
+            "pageNumber": 1,
+            "pageSize": 1,  # we only need to know if at least one exists
+        }],
+        "flags": 0,  # minimal response, no versions/files/stats
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json;api-version=7.2-preview.1",
+            "User-Agent": "Mozilla/5.0",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            data = json.load(response)
+    except (urllib.error.URLError, json.JSONDecodeError) as e:
+        print(f"Request failed: {e}")
+        return False
+
+    results = data.get("results") or [{}]
+    extensions = results[0].get("extensions", [])
+
+    # Guard against loose matching: confirm the publisher name really matches
+    target = vs_code_publisher.lower()
+    return any(
+        ext.get("publisher", {}).get("publisherName", "").lower() == target
+        for ext in extensions
+    )
 
 def append_csv_row(repo, branch, path, row, token, number, attempts=3):
     """Append one row to a CSV file in the repo and commit it via the API.
@@ -206,12 +251,17 @@ def main():
             print("No namespace name found; leaving those columns blank.")
             namespace_col = ""
             publisher_col = ""
+            vs_code_extensions_col = ""
         else:
             is_publisher = is_namespace_a_vs_code_publisher(namespace)
             print(f"'{namespace}' is a VS Code Marketplace publisher: {is_publisher}")
             namespace_col = namespace
             # str() writes the boolean as "True" or "False" in the CSV
             publisher_col = str(is_publisher)
+            if is_publisher:
+                vs_code_extensions_col = str(does_vs_code_publisher_have_extensions(namespace))
+            else:
+                vs_code_extensions_col = "False"
 
         # created_at is ISO 8601 in UTC, e.g. "2026-10-15T14:03:22Z"
         created = datetime.fromisoformat(issue["created_at"].replace("Z", "+00:00"))
@@ -220,6 +270,7 @@ def main():
             author,
             namespace_col,
             publisher_col,
+            vs_code_extensions_col,
             number,
         ]
         append_csv_row(repo, STATS_FILE_BRANCH, OUTPUT_CSV_FILE, row, token, number)
