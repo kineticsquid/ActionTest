@@ -23,10 +23,10 @@ from datetime import datetime
 API_URL = "https://api.github.com"
 
 # Path of the CSV file in the repo, set in the workflow's env block
-OUTPUT_CSV_FILE = os.environ["OUTPUT_CSV_FILE"]
+OUTPUT_CSV_FILE = os.environ.get("OUTPUT_CSV_FILE")
 
 # Orphan branch containing the CSV file
-STATS_FILE_BRANCH = os.environ["STATS_FILE_BRANCH"]
+STATS_FILE_BRANCH = os.environ.get("STATS_FILE_BRANCH")
 
 # Matches "namespace" followed by an optional ":" or "=" and then the name,
 # which may be wrapped in single quotes, backticks or square brackets, e.g.
@@ -246,35 +246,40 @@ def main():
             namespace = extract_namespace_from_body(body)
             if namespace:
                 print(f"Found namespace '{namespace}' in the description.")
-        if namespace is None:
-            # Still record the request, leaving the namespace and publisher blank
-            print("No namespace name found; leaving those columns blank.")
-            namespace_col = ""
-            publisher_col = ""
-            vs_code_extensions_col = ""
-        else:
-            is_publisher = is_namespace_a_vs_code_publisher(namespace)
-            print(f"'{namespace}' is a VS Code Marketplace publisher: {is_publisher}")
-            namespace_col = namespace
-            # str() writes the boolean as "True" or "False" in the CSV
-            publisher_col = str(is_publisher)
-            if is_publisher:
-                vs_code_extensions_col = str(does_vs_code_publisher_have_extensions(namespace))
-            else:
-                vs_code_extensions_col = "False"
+    else:
+        namespace = extract_namespace_from_body(body)
+        if namespace:
+            print(f"Found namespace '{namespace}' in the description.")
 
-        # created_at is ISO 8601 in UTC, e.g. "2026-10-15T14:03:22Z"
-        created = datetime.fromisoformat(issue["created_at"].replace("Z", "+00:00"))
-        row = [
-            created.strftime("%m/%d/%Y"),
-            author,
-            namespace_col,
-            publisher_col,
-            vs_code_extensions_col,
-            number,
-        ]
-        append_csv_row(repo, STATS_FILE_BRANCH, OUTPUT_CSV_FILE, row, token, number)
-        print(f"Appended {row} to {OUTPUT_CSV_FILE} on {STATS_FILE_BRANCH}.")
+    if namespace is None:
+        # Still record the request, leaving the namespace and publisher blank
+        print("No namespace name found; leaving those columns blank.")
+        namespace_col = ""
+        publisher_col = ""
+        vs_code_extensions_col = ""
+    else:
+        is_publisher = is_namespace_a_vs_code_publisher(namespace)
+        print(f"'{namespace}' is a VS Code Marketplace publisher: {is_publisher}")
+        namespace_col = namespace
+        # str() writes the boolean as "True" or "False" in the CSV
+        publisher_col = str(is_publisher)
+        if is_publisher:
+            vs_code_extensions_col = str(does_vs_code_publisher_have_extensions(namespace))
+        else:
+            vs_code_extensions_col = "False"
+
+    # created_at is ISO 8601 in UTC, e.g. "2026-10-15T14:03:22Z"
+    created = datetime.fromisoformat(issue["created_at"].replace("Z", "+00:00"))
+    row = [
+        created.strftime("%m/%d/%Y"),
+        author,
+        namespace_col,
+        publisher_col,
+        vs_code_extensions_col,
+        number,
+    ]
+    append_csv_row(repo, STATS_FILE_BRANCH, OUTPUT_CSV_FILE, row, token, number)
+    print(f"Appended {row} to {OUTPUT_CSV_FILE} on {STATS_FILE_BRANCH}.")
 
 
 if __name__ == "__main__":
